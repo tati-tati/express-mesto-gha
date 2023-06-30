@@ -43,6 +43,10 @@ const createUser = async (req, res) => {
     }
     res.status(201).send(user);
   } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(400).send({ message: 'Переданы некорректные данные' });
+      return;
+    }
     res.status(500).send({ message: 'Произошла ошибка' });
   }
 };
