@@ -1,11 +1,12 @@
 const User = require('../models/user');
+const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
 
 const getUsers = async (req, res) => {
   try {
     const users = await User.find({});
     res.send(users);
   } catch (err) {
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed();
   }
 };
 
@@ -15,17 +16,17 @@ const getUserById = async (req, res) => {
     // console.log(req);
     const user = await User.findById(id);
     if (!user) {
-      res.status(404).send({ message: 'Пользователь не найден' });
+      errorNotFound(res);
       return;
     }
     res.send(user);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
     // console.log(err.name);
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed();
   }
 };
 
@@ -33,21 +34,21 @@ const createUser = async (req, res) => {
   try {
     const { name, about, avatar } = req.body;
     if (!name || !about || !avatar) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
     const user = await User.create({ name, about, avatar });
     if (!user) {
-      res.status(404).send({ message: 'Пользователь не создан' });
+      errorNotFound(res);
       return;
     }
     res.status(201).send(user);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed();
   }
 };
 
@@ -55,7 +56,7 @@ const updateUser = async (req, res) => {
   try {
     const { name, about } = req.body;
     if (!name || !about) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
     const user = await User.findByIdAndUpdate(
@@ -64,16 +65,16 @@ const updateUser = async (req, res) => {
       { new: true, runValidators: true },
     );
     if (!user) {
-      res.status(404).send({ message: 'Пользователь не обновлен' });
+      errorNotFound(res);
       return;
     }
     res.send(user);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed();
   }
 };
 
@@ -81,7 +82,7 @@ const updateUserAvatar = async (req, res) => {
   try {
     const { avatar } = req.body;
     if (!avatar) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
     const user = await User.findByIdAndUpdate(
@@ -90,16 +91,16 @@ const updateUserAvatar = async (req, res) => {
       { new: true, runValidators: true },
     );
     if (!user) {
-      res.status(404).send({ message: 'Пользователь не обновлен' });
+      errorNotFound(res);
       return;
     }
     res.send(user);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed();
   }
 };
 

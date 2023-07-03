@@ -1,11 +1,12 @@
 const Card = require('../models/card');
+const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
 
 const getCards = async (req, res) => {
   try {
     const cards = await Card.find({});
     res.send(cards);
   } catch (err) {
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed(res);
   }
 };
 
@@ -13,21 +14,21 @@ const createCard = async (req, res) => {
   try {
     const { name, link } = req.body;
     if (!name || !link) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
     const card = await Card.create({ name, link, owner: req.user._id });
     if (!card) {
-      res.status(404).send({ message: 'Карточка не создана' });
+      errorNotFound(res);
       return;
     }
     res.status(201).send(card);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed(res);
   }
 };
 
@@ -36,16 +37,15 @@ const deleteCard = async (req, res) => {
     const { cardId } = req.params;
     const card = await Card.findByIdAndDelete(cardId);
     if (!card) {
-      res.status(404).send({ message: 'Карточка не найдена' });
-      return;
+      errorNotFound(res); return;
     }
     res.send(card);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed(res);
   }
 };
 
@@ -57,16 +57,15 @@ const putLike = async (req, res) => {
       { new: true },
     );
     if (!card) {
-      res.status(404).send({ message: 'Карточка не найдена' });
-      return;
+      errorNotFound(res); return;
     }
     res.send(card);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed(res);
   }
 };
 
@@ -78,16 +77,16 @@ const deleteLike = async (req, res) => {
       { new: true },
     );
     if (!card) {
-      res.status(404).send({ message: 'Карточка не найдена' });
+      errorNotFound(res);
       return;
     }
     res.send(card);
   } catch (err) {
-    if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
       return;
     }
-    res.status(500).send({ message: 'Произошла ошибка' });
+    errorServerFailed(res);
   }
 };
 
