@@ -1,5 +1,8 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
+const CustomError = require('../utils/errors');
 
 const getUsers = async (req, res) => {
   try {
@@ -30,25 +33,34 @@ const getUserById = async (req, res) => {
   }
 };
 
-const createUser = async (req, res) => {
+const createUser = async (req, res, next) => {
   try {
-    const { name, about, avatar } = req.body;
-    if (!name || !about || !avatar) {
-      errorWrongData(res);
-      return;
+    const {
+      name, about, avatar, email, password,
+    } = req.body;
+    if (!email || !password) {
+      throw new CustomError(404, 'Переданы неверные данные');
     }
-    const user = await User.create({ name, about, avatar });
+
+    const passHashed = await bcrypt.hash(req.body.password, 10);
+
+    const user = await User.create({
+      name, about, avatar, email, password: passHashed,
+    });
     if (!user) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(400, 'Пользователь не создан');
     }
-    res.status(201).send(user);
+    res.status(201).send({
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      email,
+    });
   } catch (err) {
     if (err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(404, 'Переданы неверные данные'));
     }
-    errorServerFailed();
+    next(err);
   }
 };
 
@@ -104,6 +116,29 @@ const updateUserAvatar = async (req, res) => {
   }
 };
 
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw new CustomError(404, 'Переданы неверные данные');
+    }
+
+    const user = User.findOne({ email });
+    if (!user || !bcrypt.compare(password, user.password)) {
+      throw new CustomError(404, 'Переданы неверные данные');
+    }
+    const token = jwt.sign({ _id: user._id }, 'вжух', { expiresIn: '7d' });
+    const cookieOption = {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+    res.cookie('jwtToken', token, cookieOption); // maxAge: 24 hours
+    res.send({ message: 'Вход выполнен' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  getUsers, getUserById, createUser, updateUser, updateUserAvatar,
+  getUsers, getUserById, createUser, updateUser, updateUserAvatar, login,
 };

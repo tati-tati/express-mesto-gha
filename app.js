@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
+const errorHandler = require('./middlewares/errorHandlers');
+
 const router = require('./routes/index');
 
 const { PORT = 3000 } = process.env;
@@ -20,21 +22,14 @@ const limiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Apply the rate limiting middleware to all requests
 app.use(limiter);
 app.use(helmet());
 app.disable('x-powered-by');
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '649f3b0fc061685840048f22', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
-
-  next();
-});
-
 app.use(express.json());
 app.use(router);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log('Сервер работает');
