@@ -13,7 +13,25 @@ const getUsers = async (req, res) => {
   }
 };
 
-const getUserById = async (req, res) => {
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const id = req.user._id;
+    // console.log(req);
+    const user = await User.findById(id);
+    if (!user) {
+      throw new CustomError(404, 'Пользователь не найден');
+    }
+    res.send(user);
+  } catch (err) {
+    if (err.name === 'CastError' || err.name === 'ValidationError') {
+      errorWrongData(res);
+      return;
+    }
+    next(err);
+  }
+};
+
+const getUserById = async (req, res, next) => {
   try {
     const id = req.params.userId;
     // console.log(req);
@@ -28,8 +46,7 @@ const getUserById = async (req, res) => {
       errorWrongData(res);
       return;
     }
-    // console.log(err.name);
-    errorServerFailed();
+    next(err);
   }
 };
 
@@ -123,7 +140,7 @@ const login = async (req, res, next) => {
       throw new CustomError(404, 'Переданы неверные данные');
     }
 
-    const user = User.findOne({ email });
+    const user = User.findOne({ email }).select('+password');
     if (!user || !bcrypt.compare(password, user.password)) {
       throw new CustomError(404, 'Переданы неверные данные');
     }
@@ -140,5 +157,5 @@ const login = async (req, res, next) => {
 };
 
 module.exports = {
-  getUsers, getUserById, createUser, updateUser, updateUserAvatar, login,
+  getUsers, getCurrentUser, getUserById, createUser, updateUser, updateUserAvatar, login,
 };

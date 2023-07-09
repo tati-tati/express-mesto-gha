@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const { errors } = require('celebrate');
 
 const errorHandler = require('./middlewares/errorHandlers');
 
@@ -29,6 +30,7 @@ app.disable('x-powered-by');
 app.use(express.json());
 app.use(router);
 
+app.use(errors()); // обработчик ошибок celebrate
 app.use(errorHandler);
 
 app.listen(PORT, () => {

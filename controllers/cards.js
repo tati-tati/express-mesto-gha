@@ -1,5 +1,6 @@
 const Card = require('../models/card');
 const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
+const CustomError = require('../utils/errors');
 
 const getCards = async (req, res) => {
   try {
@@ -35,11 +36,17 @@ const createCard = async (req, res) => {
 const deleteCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const card = await Card.findByIdAndDelete(cardId);
+    const card = await Card.findById(cardId);
     if (!card) {
-      errorNotFound(res); return;
+      errorNotFound(res);
+      return;
     }
-    res.send(card);
+    console.log(card.owner !== req.user._id);
+    if (card.owner !== req.user._id) {
+      throw new CustomError(404, 'Нет прав на удаление');
+    }
+    await card.deleteOne();
+    res.send({ message: 'Карточка успешно удалена' });
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       errorWrongData(res);
