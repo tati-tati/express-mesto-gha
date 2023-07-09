@@ -151,7 +151,7 @@ const login = async (req, res, next) => {
     res.cookie('jwtToken', token, cookieOption); // maxAge: 24 hours
     res.send({ message: 'Вход выполнен' });
   } catch (err) {
-    next(err);
+    next(new CustomError(ERROR_UNAUTHORIZED, 'Переданы неверные данные'));
   }
 };
 
