@@ -33,13 +33,12 @@ const createCard = async (req, res) => {
   }
 };
 
-const deleteCard = async (req, res) => {
+const deleteCard = async (req, res, next) => {
   try {
     const { cardId } = req.params;
     const card = await Card.findById(cardId);
     if (!card) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(404, 'Нет прав на удаление');
     }
     console.log(card.owner !== req.user._id);
     if (card.owner !== req.user._id) {
@@ -48,11 +47,7 @@ const deleteCard = async (req, res) => {
     await card.deleteOne();
     res.send({ message: 'Карточка успешно удалена' });
   } catch (err) {
-    if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
-    }
-    errorServerFailed(res);
+    next(err);
   }
 };
 

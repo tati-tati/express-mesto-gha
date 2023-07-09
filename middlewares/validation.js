@@ -49,8 +49,8 @@ const updateUserAvatarJoiValidate = celebrate({
 
 const createCardJoiValidate = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    link: Joi.string().custom((value, helper) => {
+    name: Joi.string().min(2).max(30).required(),
+    link: Joi.string().required().custom((value, helper) => {
       if (!validUrl.isWebUri(value)) {
         return helper.error('Введите URL');
       }
