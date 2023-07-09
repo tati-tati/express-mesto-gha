@@ -1,35 +1,33 @@
 const Card = require('../models/card');
-const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
 const CustomError = require('../utils/errors');
+const {
+  ERROR_BAD_REQUEST,
+  ERROR_FORBIDDEN,
+  ERROR_NOT_FOUND,
+} = require('../utils/constants');
 
-const getCards = async (req, res) => {
+const getCards = async (req, res, next) => {
   try {
     const cards = await Card.find({});
     res.send(cards);
   } catch (err) {
-    errorServerFailed(res);
+    next(err);
   }
 };
 
-const createCard = async (req, res) => {
+const createCard = async (req, res, next) => {
   try {
     const { name, link } = req.body;
-    if (!name || !link) {
-      errorWrongData(res);
-      return;
-    }
     const card = await Card.create({ name, link, owner: req.user._id });
     if (!card) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Неверные данные');
     }
     res.status(201).send(card);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
-    errorServerFailed(res);
+    next(err);
   }
 };
 
@@ -38,10 +36,10 @@ const deleteCard = async (req, res, next) => {
     const { cardId } = req.params;
     const card = await Card.findById(cardId);
     if (!card) {
-      throw new CustomError(404, 'Нет прав на удаление!');
+      throw new CustomError(ERROR_NOT_FOUND, 'Нет прав на удаление!');
     }
     if (card.owner.toString() !== req.user._id) {
-      throw new CustomError(403, 'Нет прав на удаление!!');
+      throw new CustomError(ERROR_FORBIDDEN, 'Нет прав на удаление!!');
     }
     await card.deleteOne();
     res.send({ message: 'Карточка успешно удалена!!!' });
@@ -50,7 +48,7 @@ const deleteCard = async (req, res, next) => {
   }
 };
 
-const putLike = async (req, res) => {
+const putLike = async (req, res, next) => {
   try {
     const card = await Card.findByIdAndUpdate(
       req.params.cardId,
@@ -58,19 +56,18 @@ const putLike = async (req, res) => {
       { new: true },
     );
     if (!card) {
-      errorNotFound(res); return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Неверные данные');
     }
     res.send(card);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
-    errorServerFailed(res);
+    next(err);
   }
 };
 
-const deleteLike = async (req, res) => {
+const deleteLike = async (req, res, next) => {
   try {
     const card = await Card.findByIdAndUpdate(
       req.params.cardId,
@@ -78,16 +75,14 @@ const deleteLike = async (req, res) => {
       { new: true },
     );
     if (!card) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Неверные данные');
     }
     res.send(card);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
-    errorServerFailed(res);
+    next(err);
   }
 };
 

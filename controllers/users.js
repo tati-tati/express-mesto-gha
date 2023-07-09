@@ -1,8 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
 const CustomError = require('../utils/errors');
+
+const {
+  ERROR_BAD_REQUEST,
+  ERROR_UNAUTHORIZED,
+  ERROR_NOT_FOUND,
+  ERROR_CONFLICT,
+} = require('../utils/constants');
 
 const getUsers = async (req, res, next) => {
   try {
@@ -19,13 +25,12 @@ const getCurrentUser = async (req, res, next) => {
     console.log(id);
     const user = await User.findById(id);
     if (!user) {
-      throw new CustomError(404, 'Пользователь не найден');
+      throw new CustomError(ERROR_NOT_FOUND, 'Пользователь не найден');
     }
     res.send(user);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
     next(err);
   }
@@ -34,17 +39,14 @@ const getCurrentUser = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const id = req.params.userId;
-    // console.log(req);
     const user = await User.findById(id);
     if (!user) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Пользователь не найден');
     }
     res.send(user);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
     next(err);
   }
@@ -56,7 +58,7 @@ const createUser = async (req, res, next) => {
       name, about, avatar, email, password,
     } = req.body;
     if (!email || !password) {
-      throw new CustomError(404, 'Переданы неверные данные');
+      throw new CustomError(ERROR_NOT_FOUND, 'Переданы неверные данные');
     }
 
     const passHashed = await bcrypt.hash(req.body.password, 10);
@@ -65,7 +67,7 @@ const createUser = async (req, res, next) => {
       name, about, avatar, email, password: passHashed,
     });
     if (!user) {
-      throw new CustomError(400, 'Пользователь не создан');
+      throw new CustomError(ERROR_NOT_FOUND, 'Пользователь не создан');
     }
     res.status(201).send({
       name: user.name,
@@ -75,64 +77,52 @@ const createUser = async (req, res, next) => {
     });
   } catch (err) {
     if (err.code === 11000) {
-      next(new CustomError(409, 'Пользователь с таким email уже существует'));
+      next(new CustomError(ERROR_CONFLICT, 'Пользователь с таким email уже существует'));
     }
     if (err.name === 'ValidationError') {
-      next(new CustomError(404, 'Переданы неверные данные'));
+      next(new CustomError(ERROR_NOT_FOUND, 'Переданы неверные данные'));
     }
     next(err);
   }
 };
 
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
   try {
     const { name, about } = req.body;
-    if (!name || !about) {
-      errorWrongData(res);
-      return;
-    }
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { name, about },
       { new: true, runValidators: true },
     );
     if (!user) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Пользователь не создан');
     }
     res.send(user);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
-    errorServerFailed();
+    next(err);
   }
 };
 
-const updateUserAvatar = async (req, res) => {
+const updateUserAvatar = async (req, res, next) => {
   try {
     const { avatar } = req.body;
-    if (!avatar) {
-      errorWrongData(res);
-      return;
-    }
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { avatar },
       { new: true, runValidators: true },
     );
     if (!user) {
-      errorNotFound(res);
-      return;
+      throw new CustomError(ERROR_NOT_FOUND, 'Пользователь не найден');
     }
     res.send(user);
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      errorWrongData(res);
-      return;
+      next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
     }
-    errorServerFailed();
+    next(err);
   }
 };
 
@@ -142,7 +132,7 @@ const login = async (req, res, next) => {
 
     const user = await User.findOne({ email }).select('+password');
     if (!user || !bcrypt.compare(password, user.password)) {
-      throw new CustomError(401, 'Переданы неверные данные');
+      throw new CustomError(ERROR_UNAUTHORIZED, 'Переданы неверные данные');
     }
     const token = jwt.sign({ _id: user._id }, 'вжух', { expiresIn: '7d' });
     const cookieOption = {

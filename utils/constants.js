@@ -1,5 +1,15 @@
-const errorWrongData = (res) => { res.status(400).send({ message: 'Переданы некорректные данные' }); };
-const errorNotFound = (res) => { res.status(404).send({ message: 'Данные не найдены' }); };
-const errorServerFailed = (res) => { res.status(500).send({ message: 'Произошла ошибка' }); };
+const ERROR_BAD_REQUEST = 400;
+const ERROR_UNAUTHORIZED = 401;
+const ERROR_FORBIDDEN = 403;
+const ERROR_NOT_FOUND = 404;
+const ERROR_CONFLICT = 409;
+const ERROR_DEFAULT = 500;
 
-module.exports = { errorWrongData, errorNotFound, errorServerFailed };
+module.exports = {
+  ERROR_BAD_REQUEST,
+  ERROR_UNAUTHORIZED,
+  ERROR_FORBIDDEN,
+  ERROR_NOT_FOUND,
+  ERROR_CONFLICT,
+  ERROR_DEFAULT,
+};
