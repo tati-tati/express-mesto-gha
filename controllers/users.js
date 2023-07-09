@@ -31,6 +31,7 @@ const getCurrentUser = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -47,6 +48,7 @@ const getUserById = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -78,9 +80,11 @@ const createUser = async (req, res, next) => {
   } catch (err) {
     if (err.code === 11000) {
       next(new CustomError(ERROR_CONFLICT, 'Пользователь с таким email уже существует'));
+      return;
     }
     if (err.name === 'ValidationError') {
       next(new CustomError(ERROR_NOT_FOUND, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -101,6 +105,7 @@ const updateUser = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -121,6 +126,7 @@ const updateUserAvatar = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -131,9 +137,12 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select('+password');
-    if (!user || !bcrypt.compare(password, user.password)) {
+    const isMatched = await bcrypt.compare(password, user.password);
+
+    if (!user || !isMatched) {
       throw new CustomError(ERROR_UNAUTHORIZED, 'Переданы неверные данные');
     }
+
     const token = jwt.sign({ _id: user._id }, 'вжух', { expiresIn: '7d' });
     const cookieOption = {
       httpOnly: true,

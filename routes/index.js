@@ -3,6 +3,8 @@ const router = require('express').Router();
 const { login, createUser } = require('../controllers/users');
 const { loginJoiValidate, createUserJoiValidate } = require('../middlewares/validation');
 const auth = require('../middlewares/auth');
+const CustomError = require('../utils/errors');
+const { ERROR_NOT_FOUND } = require('../utils/constants');
 
 const userRouter = require('./usersRoutes');
 const cardRouter = require('./cardsRoutes');
@@ -15,8 +17,8 @@ router.use(auth);
 
 router.use(userRouter);
 router.use(cardRouter);
-router.use((req, res) => {
-  res.status(404).send({ message: 'Страница не найдена' });
+router.use(() => {
+  throw new CustomError(ERROR_NOT_FOUND, 'Страница не найдена');
 });
 
 module.exports = router;

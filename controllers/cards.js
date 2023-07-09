@@ -26,6 +26,7 @@ const createCard = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -62,6 +63,7 @@ const putLike = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
@@ -81,6 +83,7 @@ const deleteLike = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
       next(new CustomError(ERROR_BAD_REQUEST, 'Переданы неверные данные'));
+      return;
     }
     next(err);
   }
