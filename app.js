@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { errors } = require('celebrate');
+const cookieParser = require('cookie-parser');
 
 const errorHandler = require('./middlewares/errorHandlers');
 
@@ -28,6 +29,7 @@ app.use(helmet());
 app.disable('x-powered-by');
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(router);
 
 app.use(errors()); // обработчик ошибок celebrate

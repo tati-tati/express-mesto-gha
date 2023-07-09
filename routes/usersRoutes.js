@@ -19,12 +19,12 @@ const {
 
 router.get('/users', getUsers);
 
-router.get('/users/:userId', getUserByIdJoiValidate, getUserById);
+router.get('/users/me', getCurrentUser);
 
 router.patch('/users/me', updateUserJoiValidate, updateUser);
 
-router.get('/users/me', getCurrentUser);
-
 router.patch('/users/me/avatar', updateUserAvatarJoiValidate, updateUserAvatar);
+
+router.get('/users/:userId', getUserByIdJoiValidate, getUserById);
 
 module.exports = router;

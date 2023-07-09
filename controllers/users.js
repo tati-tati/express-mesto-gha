@@ -4,19 +4,19 @@ const User = require('../models/user');
 const { errorWrongData, errorNotFound, errorServerFailed } = require('../utils/constants');
 const CustomError = require('../utils/errors');
 
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
   try {
     const users = await User.find({});
     res.send(users);
   } catch (err) {
-    errorServerFailed();
+    next(err);
   }
 };
 
 const getCurrentUser = async (req, res, next) => {
   try {
     const id = req.user._id;
-    // console.log(req);
+    console.log(id);
     const user = await User.findById(id);
     if (!user) {
       throw new CustomError(404, 'Пользователь не найден');
@@ -74,6 +74,9 @@ const createUser = async (req, res, next) => {
       email,
     });
   } catch (err) {
+    if (err.code === 11000) {
+      next(new CustomError(409, 'Пользователь с таким email уже существует'));
+    }
     if (err.name === 'ValidationError') {
       next(new CustomError(404, 'Переданы неверные данные'));
     }
@@ -136,13 +139,10 @@ const updateUserAvatar = async (req, res) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      throw new CustomError(404, 'Переданы неверные данные');
-    }
 
-    const user = User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password');
     if (!user || !bcrypt.compare(password, user.password)) {
-      throw new CustomError(404, 'Переданы неверные данные');
+      throw new CustomError(401, 'Переданы неверные данные');
     }
     const token = jwt.sign({ _id: user._id }, 'вжух', { expiresIn: '7d' });
     const cookieOption = {
