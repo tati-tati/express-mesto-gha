@@ -38,14 +38,13 @@ const deleteCard = async (req, res, next) => {
     const { cardId } = req.params;
     const card = await Card.findById(cardId);
     if (!card) {
-      throw new CustomError(404, 'Нет прав на удаление');
+      throw new CustomError(404, 'Нет прав на удаление!');
     }
-    console.log(card.owner !== req.user._id);
-    if (card.owner !== req.user._id) {
-      throw new CustomError(404, 'Нет прав на удаление');
+    if (card.owner.toString() !== req.user._id) {
+      throw new CustomError(403, 'Нет прав на удаление!!');
     }
     await card.deleteOne();
-    res.send({ message: 'Карточка успешно удалена' });
+    res.send({ message: 'Карточка успешно удалена!!!' });
   } catch (err) {
     next(err);
   }
